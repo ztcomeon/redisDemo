@@ -1,0 +1,53 @@
+server:
+  port: 8080
+spring:
+  # jpa
+  jpa:
+    database: mysql
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+      naming:
+        physical-strategy: org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy
+    database-platform: org.hibernate.dialect.MySQL5InnoDBDialect  #不加这句则默认为myisam引擎
+
+  # datasource
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    url: jdbc:mysql://127.0.0.1:3306/idea_test?serverTimezone=UTC&useSSL=false
+    username: root
+    password: 123456
+    driverClassName: com.mysql.cj.jdbc.Driver
+
+  #redis相关配置，注意没有密码
+  redis:
+    host: localhost
+    password:
+    port: 6379
+    database: 0
+
+
+    # springboot2.x的默认客户端是lettuce
+    # 单位要带上
+#    lettuce:
+#      pool:
+#        max-active: 8
+#        min-idle: 0
+#        max-idle: 8
+#        max-wait: 10000ms
+#        time-between-eviction-runs: 100ms
+
+#springboot 1.0和2.0的redis客户端不同，配置有些不同
+# springboot1.x默认客户端是jedis
+    jedis:
+      pool:
+        #最大连接数
+        max-active: 8
+        #最小空闲
+        min-idle: 0
+        #最大空闲
+        max-idle: 8
+        #最大阻塞等待时间(负数表示没限制)
+        max-wait: -1
+    #连接超时时间
+    timeout: 10000

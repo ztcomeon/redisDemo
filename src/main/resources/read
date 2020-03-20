@@ -1,0 +1,34 @@
+
+注意：
+1.redis客户端问题
+        springboot1.x和2.x使用的redis客户端不同，1.x为jedis，2.x为lettuce
+        二者有写区别，redis线程不安全，lettuce线程安全，且封装的更高级
+        参考博文：
+        https://blog.csdn.net/chl87783255/article/details/98177040
+        所以若每秒使用redis次数达数万，不建议用Jedis，因为不仅降低redis性能，而且降低client所在服务器的性能。
+        可选择Lettuce，Redisson。
+        需要根据具体的业务来，一般使用jedis就能满足
+        1.5的版本默认采用的连接池技术是jedis，2.0以上版本默认连接池是lettuce, 因为此次是采用jedis，所以需要排除lettuce的jar
+
+2.RedisTemplate和StringRedisTemplate
+    两者的关系是StringRedisTemplate继承RedisTemplate。
+    两者的数据是不共通的；也就是说StringRedisTemplate只能管理StringRedisTemplate里面的数据，RedisTemplate只能管理RedisTemplate中的数据。
+    SDR（springboot data redis）默认采用的序列化策略有两种，一种是String的序列化策略，一种是JDK的序列化策略。
+    StringRedisTemplate默认采用的是String的序列化策略，保存的key和value都是采用此策略序列化保存的。
+    RedisTemplate默认采用的是JDK的序列化策略，保存的key和value都是采用此策略序列化保存的。
+    RedisTemplate使用的是JdkSerializationRedisSerializer
+    StringRedisTemplate使用的是StringRedisSerializer
+    JDK的系列化不是以可读的形式展现的，而是以字节数组显示，类似下面：\xAC\xED\x00\x05t\x05sr\x00，所以需要在配置文件中配置序列化的方式
+
+3.配置相关
+    可以配置三种Bean，注解，RedisTemplate，StringRedisTemplate
+    使用RedisTemplate时注意要配置序列化的方式
+    使用springboot CacheManager 用注解的方式实现redis缓存
+    @CachePut(cacheNames = "user", condition = "#userEntity!=null", key = "#result.id")  创建缓存对象
+    @CacheEvict(cacheNames = "user", beforeInvocation = true, key = "#id")     移除缓存对象
+    @Cacheable(cacheNames = "user")    获取缓存对象
+
+
+
+
+
