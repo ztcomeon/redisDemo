@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Key;
 import java.util.Date;
 import java.util.List;
 
@@ -82,7 +83,27 @@ public class BookController extends BaseController {
     public ResponseModel deleteById(String id) {
         try {
             bookService.deleteById(id);
-           return this.buildHttpReslut();
+            return this.buildHttpReslut();
+        } catch (Exception e) {
+            return this.buildHttpReslutForException(e);
+        }
+    }
+
+    @RequestMapping(value = "/leftPush", method = {RequestMethod.POST})
+    public ResponseModel leftPush(@RequestBody BookEntity bookEntity) {
+        try {
+            bookService.lPush(bookEntity);
+            return this.buildHttpReslut();
+        } catch (Exception e) {
+            return this.buildHttpReslutForException(e);
+        }
+    }
+
+    @RequestMapping(value = "/leftPop", method = {RequestMethod.GET})
+    public ResponseModel leftPop(String key, long start, long end) {
+        try {
+            List<Object> objects = bookService.lPop(key, start, end);
+            return new ResponseModel(new Date().getTime(), objects, ResponseCode._200, "");
         } catch (Exception e) {
             return this.buildHttpReslutForException(e);
         }

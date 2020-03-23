@@ -13,6 +13,7 @@ package com.example.redisDemo.service.internal;
 import com.example.redisDemo.entity.BookEntity;
 import com.example.redisDemo.repository.BookRepository;
 import com.example.redisDemo.service.BookService;
+import com.example.redisDemo.service.RedisService;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -39,6 +40,14 @@ public class BookServiceImpl implements BookService {
     @Autowired
     RedisTemplate redisTemplate;
 
+    @Autowired
+    RedisService redisService;
+
+    //使用：能够自动分层
+    private final String KEY = "bookCache_:";
+
+    private final String LIST_KEY = "list:";
+
     @Override
     public List<BookEntity> findAll() {
         List<BookEntity> entities = bookRepository.findAll();
@@ -52,8 +61,7 @@ public class BookServiceImpl implements BookService {
         Validate.notNull(bookEntity, "新增对象不能为空");
         Validate.notBlank(bookEntity.getTitle(), "标题不能为空");
         BookEntity entity = bookRepository.save(bookEntity);
-        redisTemplate.opsForValue().set(entity.getId(), entity);
-        redisTemplate.expire("book", 300, TimeUnit.SECONDS);
+        redisService.set(KEY, entity.getId(), entity);
         return entity;
     }
 
@@ -71,15 +79,50 @@ public class BookServiceImpl implements BookService {
     @Transactional
     @Override
     public void deleteById(String id) {
-        bookRepository.deleteById(id);
+
+        boolean delete = redisService.delete(KEY, id);
+        System.out.println(delete);
+
+        try {
+            BookEntity oldBook = bookRepository.findById(id).orElse(null);
+            if (oldBook != null) {
+                bookRepository.deleteById(id);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public BookEntity findById(String id) {
-        redisTemplate.opsForValue().get(id);
-        redisTemplate.expire("book", 30, TimeUnit.SECONDS);
-        BookEntity entity = bookRepository.findById(id).orElse(null);
 
-        return entity;
+        //先从redis中取
+        BookEntity bookEntity = (BookEntity) redisService.get(KEY, id);
+
+        if (bookEntity == null) {
+            //redis中没有在从db中取
+            BookEntity bookEntityDB = bookRepository.findById(id).orElse(null);
+            if (bookEntityDB != null) {
+                //db非空的情况下刷新redis
+                redisService.set(KEY, bookEntityDB.getId(), bookEntityDB);
+                return bookEntityDB;
+            }
+        }
+        return bookEntity;
+    }
+
+    @Override
+    public void lPush(BookEntity bookEntity) {
+        BookEntity entity = bookRepository.save(bookEntity);
+        //list的命名规则需要查一下
+        String key = LIST_KEY + "book";
+        redisService.lPush(KEY, key, entity);
+    }
+
+    @Override
+    public List<Object> lPop(String key, long start, long end) {
+        String key2 = LIST_KEY + key;
+        List<Object> objects = redisService.lRange(KEY, key2, start, end);
+        return objects;
     }
 }

@@ -34,4 +34,9 @@ public interface BookService {
     void deleteById(String id);
 
     BookEntity findById(String id);
+
+
+    void lPush(BookEntity bookEntity);
+
+    List<Object> lPop(String key, long start, long end);
 }
