@@ -2,13 +2,13 @@ package com.example.redisDemo.service.internal;
 
 import com.example.redisDemo.service.RedisService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.ListOperations;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.data.redis.core.*;
 import org.springframework.stereotype.Service;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -104,6 +104,85 @@ public class RedisServiceImpl implements RedisService {
         String realKey = prefix + key;
         ListOperations<Object, Object> operations = redisTemplate.opsForList();
         List<Object> objects = operations.range(realKey, start, end);
+        return objects;
+    }
+
+    @Override
+    public boolean hashSet(String prefix, String key, Object object1, Object object2) {
+        boolean result = false;
+        try {
+            String realKey = prefix + key;
+            HashOperations<Object, Object, Object> hashOperations = redisTemplate.opsForHash();
+            hashOperations.put(realKey, object1, object2);
+            result = true;
+            return result;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    @Override
+    public boolean hashSetAll(String prefix, String key, Map<String, Object> map) {
+        boolean result = false;
+        try {
+            String realKey = prefix + key;
+            HashOperations<Object, Object, Object> hashOperations = redisTemplate.opsForHash();
+            hashOperations.putAll(realKey, map);
+            result = true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    @Override
+    public Object hashGet(String prefix, String key) {
+        String realKey = prefix + key;
+        Object result = null;
+        ValueOperations<Object, Object> operations = redisTemplate.opsForValue();
+        if (exists(prefix, key)) {
+            result = operations.get(realKey);
+        }
+        return result;
+    }
+
+    @Override
+    public boolean setAdd(String prefix, String key, Object object) {
+        boolean result = false;
+        String realKey = prefix + key;
+        try {
+            SetOperations<Object, Object> setOperations = redisTemplate.opsForSet();
+            setOperations.add(realKey, object);
+            result = true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return result;
+    }
+
+    @Override
+    public Object setGet(String prefix, String key) {
+        String realKey = prefix + key;
+        SetOperations<Object, Object> setOperations = redisTemplate.opsForSet();
+        Set<Object> objects = setOperations.members(realKey);
+        return objects;
+    }
+
+    @Override
+    public boolean zsetAdd(String prefix, String key, Object object, double score) {
+        String realKey = prefix + key;
+        ZSetOperations<Object, Object> zSetOperations = redisTemplate.opsForZSet();
+        Boolean result = zSetOperations.add(realKey, object, score);
+        return result;
+    }
+
+    @Override
+    public Object zsetRangeByScore(String prefix, String key, double scoure, double scoure1) {
+        String realKey = prefix + key;
+        ZSetOperations<Object, Object> zSetOperations = redisTemplate.opsForZSet();
+        Set<Object> objects = zSetOperations.rangeByScore(realKey, scoure, scoure1);
         return objects;
     }
 }
